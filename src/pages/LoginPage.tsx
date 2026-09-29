@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useAuth } from '../auth/useAuth'
@@ -14,83 +14,156 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      if (mode === 'login') {
+        await signIn(email.trim(), password)
+      } else {
+        const { error: e } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin,
+        })
+        if (e) throw e
+        toast.success('Te enviamos un correo para restablecer la contraseña.')
+        setMode('login')
+      }
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className="grid min-h-full place-items-center px-4">
-      <form
-        className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-        onSubmit={async (e) => {
-          e.preventDefault()
-          setError(null)
-          setLoading(true)
-          try {
-            if (mode === 'login') {
-              await signIn(email.trim(), password)
-            } else {
-              const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-                redirectTo: window.location.origin,
-              })
-              if (error) throw error
-              toast.success('Te enviamos un correo para restablecer la contraseña.')
-              setMode('login')
-            }
-          } catch (err) {
-            setError((err as Error).message)
-          } finally {
-            setLoading(false)
-          }
-        }}
-      >
-        <div className="mb-6 flex items-center gap-2">
-          <span className="grid size-9 place-items-center rounded-lg bg-brand-500 text-sm font-bold text-white">S4F</span>
-          <div>
-            <h1 className="font-semibold">Spot For Fun</h1>
-            <p className="text-xs text-zinc-500">Panel de administración</p>
+    <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
+      {/* Left: statement panel */}
+      <aside className="relative hidden overflow-hidden bg-zinc-950 text-zinc-100 lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14">
+        <div className="relative flex items-center gap-3">
+          <div className="grid size-11 place-items-center rounded-xl bg-brand-500 text-base font-black tracking-tight text-white">
+            S4F
+          </div>
+          <div className="text-[10px] font-bold leading-tight uppercase tracking-[0.18em] text-zinc-400">
+            Centro de<br />moderación
           </div>
         </div>
-        <label className="block text-sm font-medium">
-          Email
-          <input
-            type="email"
-            required
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-zinc-700"
-          />
-        </label>
-        {mode === 'login' && (
-          <label className="mt-4 block text-sm font-medium">
-            Contraseña
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-zinc-700"
-            />
-          </label>
-        )}
-        {error && <p className="mt-4 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-white dark:text-zinc-900"
-        >
-          {loading && <Loader2 className="size-4 animate-spin" />}
-          {mode === 'login' ? 'Entrar' : 'Enviar enlace de recuperación'}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null)
-            setMode(mode === 'login' ? 'reset' : 'login')
-          }}
-          className="mt-3 block w-full text-center text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-        >
-          {mode === 'login' ? '¿Olvidaste tu contraseña?' : 'Volver a iniciar sesión'}
-        </button>
-      </form>
+
+        <div className="relative max-w-md space-y-5">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-500">
+            <span className="size-1.5 rounded-full bg-brand-500" />
+            Acceso interno
+          </div>
+          <h1 className="text-4xl font-black leading-[1.05] tracking-tight xl:text-5xl">
+            Modera. Aprueba.<br />
+            <span className="text-brand-500">Publica.</span>
+          </h1>
+          <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
+            Revisa spots, reseñas y fotos. Cada cambio se refleja al instante en la app.
+          </p>
+        </div>
+
+        <div className="relative flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+          <span>Spot For Fun</span>
+          <span>v1</span>
+        </div>
+      </aside>
+
+      {/* Right: form */}
+      <main className="relative flex items-center justify-center bg-zinc-50 px-6 py-10 dark:bg-zinc-950">
+        <div className="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
+          <div className="grid size-9 place-items-center rounded-lg bg-brand-500 text-sm font-black text-white">
+            S4F
+          </div>
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+            Centro de moderación
+          </span>
+        </div>
+
+        <form onSubmit={submit} className="w-full max-w-sm">
+          <div className="mb-10 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-600">
+              {mode === 'login' ? 'Acceso' : 'Recuperar'}
+            </p>
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
+              {mode === 'login' ? 'Iniciar sesión' : 'Restablecer contraseña'}
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {mode === 'login'
+                ? 'Solo cuentas con permisos de administrador. Si no tienes acceso, pide a un admin que te agregue.'
+                : 'Te enviaremos un correo con un enlace para definir una contraseña nueva.'}
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <Field label="Correo electrónico">
+              <input
+                type="email"
+                required
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
+                className="w-full border-0 border-b-2 border-zinc-300 bg-transparent px-0 py-3 text-lg font-medium text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-brand-500 focus:outline-none dark:border-zinc-700 dark:text-zinc-100"
+              />
+            </Field>
+
+            {mode === 'login' && (
+              <Field label="Contraseña">
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full border-0 border-b-2 border-zinc-300 bg-transparent px-0 py-3 text-lg font-medium text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-brand-500 focus:outline-none dark:border-zinc-700 dark:text-zinc-100"
+                />
+              </Field>
+            )}
+          </div>
+
+          {error && (
+            <p className="mt-4 text-sm font-medium text-rose-600 dark:text-rose-400">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-4 text-sm font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-brand-500 disabled:opacity-60 dark:bg-brand-500 dark:hover:bg-brand-600"
+          >
+            {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+            {mode === 'login' ? 'Iniciar sesión' : 'Enviar enlace'}
+            {mode === 'login' && !loading && (
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setError(null)
+              setMode(mode === 'login' ? 'reset' : 'login')
+            }}
+            className="mt-5 block w-full text-center text-xs text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-zinc-200"
+          >
+            {mode === 'login' ? '¿Olvidaste tu contraseña?' : 'Volver a iniciar sesión'}
+          </button>
+
+          <p className="mt-14 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
+            Spot For Fun · Centro de moderación
+          </p>
+        </form>
+      </main>
     </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</span>
+      <div className="mt-1">{children}</div>
+    </label>
   )
 }
