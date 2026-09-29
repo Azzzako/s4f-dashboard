@@ -37,7 +37,67 @@ Este repo incluye los archivos SQL listos para copiarse al repo `spot_for_fun` y
 ```bash
 cp .env.example .env.local   # llena VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY
 npm install
-npm run dev                  # http://localhost:5173
+npm run dev                  # http://localhost:7777
+```
+
+## Workflow de ramas
+
+| Rama | Para qué sirve |
+| --- | --- |
+| `dev` | Trabajo de features. Aquí se hacen los PRs de `feature/*`. |
+| `staging` | Pre-producción. Recibe merges de `dev` cuando se quiere validar algo completo. |
+| `master` | Producción. Solo recibe merges desde `staging`. Cada merge redespliega. |
+
+```bash
+# Empezar una feature
+git checkout dev
+git checkout -b feature/mi-cambio
+# ...trabajo...
+git commit -am "feat: mi cambio"
+git checkout dev && git merge --no-ff feature/mi-cambio
+git branch -d feature/mi-cambio
+
+# Promover a staging (validación manual)
+git checkout staging && git merge --no-ff dev
+
+# Promover a producción (esto redespliega automáticamente si el hook está instalado)
+git checkout master && git merge --no-ff staging
+npm run deploy
+```
+
+## Despliegue local con pm2
+
+El dashboard vive en `http://127.0.0.1:7777` (loopback, no expuesto en red) bajo pm2.
+
+**Primer arranque** (instala pm2 si falta, compila y deja el proceso corriendo):
+
+```bash
+npm run setup
+# luego (opcional, una vez):
+pm2 startup    # te mostrará un comando sudo, cópialo y ejecútalo
+# para que arranque al prender la Mac
+```
+
+**Redesplegar** después de un merge a master:
+
+```bash
+npm run deploy
+```
+
+**Auto-deploy opcional al hacer `git pull` en master:**
+
+```bash
+npm run hooks:install
+```
+
+**Comandos pm2 útiles:**
+
+```bash
+pm2 logs s4f-admin      # logs en vivo
+pm2 restart s4f-admin   # reiniciar
+pm2 stop s4f-admin      # detener
+pm2 status              # procesos activos
+pm2 delete s4f-admin    # eliminar el proceso
 ```
 
 ## Scripts

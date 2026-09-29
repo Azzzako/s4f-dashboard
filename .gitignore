@@ -27,3 +27,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# pm2 (local process state and logs)
+.pm2/
+*.pm2.log
+ecosystem.config.cjs
