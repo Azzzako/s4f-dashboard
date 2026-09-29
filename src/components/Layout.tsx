@@ -1,9 +1,11 @@
-import { Flag, History, Image, LayoutDashboard, LogOut, MapPin, Menu, MessageSquareText, X } from 'lucide-react'
+import { Flag, History, Image, LayoutDashboard, LogOut, MapPin, Menu, MessageSquareText, Moon, Settings, ShieldCheck, Sun, X } from 'lucide-react'
 import { useState, type ComponentType } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { useAuth } from '../auth/useAuth'
 import { usePendingCounts } from '../lib/queries'
+import { useRealtime } from '../lib/realtime'
 import type { PendingCounts } from '../lib/types'
+import { useTheme, type Theme } from './ThemeProvider'
 
 interface NavItem {
   to: string
@@ -19,12 +21,16 @@ const nav: NavItem[] = [
   { to: '/photos', label: 'Fotos', icon: Image, count: 'photos' },
   { to: '/reports', label: 'Reportes', icon: Flag, count: 'reports' },
   { to: '/audit', label: 'Auditoría', icon: History },
+  { to: '/admins', label: 'Administradores', icon: ShieldCheck },
+  { to: '/settings', label: 'Ajustes', icon: Settings },
 ]
 
 export function Layout() {
   const { state, signOut } = useAuth()
   const { data: counts } = usePendingCounts()
+  const { theme, setTheme } = useTheme()
   const [open, setOpen] = useState(false)
+  useRealtime()
   const username = state.status === 'admin' ? state.username : ''
 
   const sidebar = (
@@ -60,6 +66,7 @@ export function Layout() {
         )
       })}
       <div className="mt-auto border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <ThemeToggle theme={theme} onChange={setTheme} />
         <p className="truncate px-3 text-xs text-zinc-500">Sesión: {username}</p>
         <button
           onClick={signOut}
@@ -101,6 +108,35 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+    </div>
+  )
+}
+
+function ThemeToggle({ theme, onChange }: { theme: Theme; onChange: (t: Theme) => void }) {
+  const options: { value: Theme; label: string; icon: ComponentType<{ className?: string }> }[] = [
+    { value: 'light', label: 'Claro', icon: Sun },
+    { value: 'system', label: 'Sistema', icon: Settings },
+    { value: 'dark', label: 'Oscuro', icon: Moon },
+  ]
+  return (
+    <div className="mb-3 flex items-center gap-1 px-2" role="radiogroup" aria-label="Tema">
+      {options.map(({ value, label, icon: Icon }) => (
+        <button
+          key={value}
+          role="radio"
+          aria-checked={theme === value}
+          aria-label={label}
+          title={label}
+          onClick={() => onChange(value)}
+          className={`flex flex-1 items-center justify-center rounded-md p-1.5 transition-colors ${
+            theme === value
+              ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+              : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-300'
+          }`}
+        >
+          <Icon className="size-4" />
+        </button>
+      ))}
     </div>
   )
 }

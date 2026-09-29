@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>S4F Admin</title>
+    <script>
+      // Apply theme before React mounts to avoid a flash of the wrong palette.
+      (function () {
+        try {
+          var t = localStorage.getItem('s4f-theme');
+          if (t !== 'light' && t !== 'dark' && t !== 'system') t = 'system';
+          var resolved = t === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : t;
+          if (resolved === 'dark') document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = resolved;
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

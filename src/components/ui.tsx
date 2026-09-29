@@ -129,14 +129,19 @@ export function QueryState({
   isEmpty,
   emptyText,
   children,
+  onRetry,
+  skeleton,
 }: {
   isLoading: boolean
   error: Error | null
   isEmpty: boolean
   emptyText: string
   children: ReactNode
+  onRetry?: () => void
+  skeleton?: ReactNode
 }) {
   if (isLoading) {
+    if (skeleton) return <>{skeleton}</>
     return (
       <div className="grid place-items-center py-20 text-zinc-400">
         <Loader2 className="size-6 animate-spin" />
@@ -147,9 +152,17 @@ export function QueryState({
     return (
       <Card className="flex items-start gap-3 p-4 text-sm text-rose-700 dark:text-rose-300">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-medium">No se pudo cargar.</p>
           <p className="mt-0.5 text-rose-600/80 dark:text-rose-300/80">{error.message}</p>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="mt-3 rounded-lg border border-rose-300 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/40"
+            >
+              Reintentar
+            </button>
+          )}
         </div>
       </Card>
     )
@@ -169,11 +182,25 @@ export function QueryState({
 
 function Modal({ open, onClose, children, className = '' }: { open: boolean; onClose: () => void; children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const lastFocused = useRef<HTMLElement | null>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    if (open && !el.open) el.showModal()
-    if (!open && el.open) el.close()
+    if (open && !el.open) {
+      lastFocused.current = (document.activeElement as HTMLElement) ?? null
+      el.showModal()
+    }
+    if (!open && el.open) {
+      el.close()
+      // Native <dialog> restores focus, but on some browsers (and on rapid
+      // unmounts) the trigger element is gone. Fall back to the element
+      // we captured before opening.
+      requestAnimationFrame(() => {
+        const last = lastFocused.current
+        if (last && document.contains(last)) last.focus()
+        lastFocused.current = null
+      })
+    }
   }, [open])
   return (
     <dialog

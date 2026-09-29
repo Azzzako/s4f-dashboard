@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState({ status: 'signed_out' })
       return
     }
-    setState({ status: 'admin', session, username })
+    setState({ status: 'admin', session, userId: session.user.id, username })
   }, [])
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut()
       throw new Error('Esta cuenta no tiene permisos de administrador.')
     }
-    setState({ status: 'admin', session: data.session, username })
+    setState({ status: 'admin', session: data.session, userId: data.session.user.id, username })
   }, [])
 
   const signOut = useCallback(async () => {

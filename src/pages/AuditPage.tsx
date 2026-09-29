@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { fetchAudit } from '../lib/api'
-import { formatDate } from '../lib/format'
-import { Card, PageHeader, QueryState } from '../components/ui'
+import { Button, Card, PageHeader, QueryState } from '../components/ui'
+import { TableRowSkeleton } from '../components/Skeleton'
+import { useSearchParam } from '../lib/useSearchParam'
 
 const actionLabels: Record<string, string> = {
   'spot.approved': 'Aprobó spot',
@@ -17,19 +19,56 @@ const actionLabels: Record<string, string> = {
   'report.reviewed': 'Cerró reporte',
   'report.dismissed': 'Descartó reporte',
   'report.open': 'Reabrió reporte',
+  'user.promoted': 'Promovió a admin',
+  'user.demoted': 'Quitó rol de admin',
 }
 
+const PAGE_SIZE = 50
+
+const ACTION_FILTERS = ['spot', 'rating', 'photo', 'report', 'user'] as const
+
 export function AuditPage() {
-  const query = useQuery({ queryKey: ['audit'], queryFn: fetchAudit })
+  const [offset, setOffset] = useState(0)
+  const [filter, setFilter] = useSearchParam<string>('type', '', ['', ...ACTION_FILTERS])
+
+  const query = useQuery({
+    queryKey: ['audit', filter, offset],
+    queryFn: () => fetchAudit({ offset, limit: PAGE_SIZE, paginate: offset > 0 }),
+    placeholderData: (prev) => prev,
+  })
+
+  const items = (query.data ?? []).filter((e) => !filter || e.action.startsWith(filter))
 
   return (
     <>
-      <PageHeader title="Auditoría" subtitle="Últimas 200 acciones de moderación." />
+      <PageHeader title="Auditoría" subtitle="Registro de cada acción de moderación y cambio de rol." />
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <select
+          value={filter}
+          onChange={(e) => {
+            setFilter(e.target.value)
+            setOffset(0)
+          }}
+          aria-label="Tipo de acción"
+          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+        >
+          <option value="">Todas las acciones</option>
+          {ACTION_FILTERS.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <QueryState
         isLoading={query.isLoading}
         error={query.error}
-        isEmpty={query.data?.length === 0}
+        isEmpty={items.length === 0}
         emptyText="Aún no hay acciones registradas."
+        onRetry={query.refetch}
+        skeleton={<TableRowSkeleton rows={8} cols={4} />}
       >
         <Card className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -42,16 +81,19 @@ export function AuditPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {query.data?.map((e) => {
+              {items.map((e) => {
                 const reason = typeof e.details.reason === 'string' ? e.details.reason : null
                 const name = typeof e.details.name === 'string' ? e.details.name : null
+                const newRole = typeof e.details.new_role === 'string' ? e.details.new_role : null
                 return (
                   <tr key={e.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatDate(e.created_at)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
+                      {new Date(e.created_at).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </td>
                     <td className="px-4 py-3">@{e.admin?.username ?? '—'}</td>
                     <td className="px-4 py-3">{actionLabels[e.action] ?? e.action}</td>
                     <td className="px-4 py-3 text-zinc-500">
-                      {[name, reason].filter(Boolean).join(' · ') || (
+                      {[name, newRole ? `rol → ${newRole}` : null, reason].filter(Boolean).join(' · ') || (
                         <code className="text-xs">{e.target_id.slice(0, 8)}</code>
                       )}
                     </td>
@@ -61,6 +103,14 @@ export function AuditPage() {
             </tbody>
           </table>
         </Card>
+
+        {query.data && query.data.length === PAGE_SIZE && (
+          <div className="mt-6 flex justify-center">
+            <Button variant="ghost" onClick={() => setOffset((o) => o + PAGE_SIZE)} loading={query.isFetching}>
+              Cargar más
+            </Button>
+          </div>
+        )}
       </QueryState>
     </>
   )
