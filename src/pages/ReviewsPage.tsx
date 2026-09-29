@@ -8,6 +8,7 @@ import { useSearchParam } from '../lib/useSearchParam'
 import { Avatar, Button, Card, Lightbox, PageHeader, QueryState, ReasonDialog, Stars, StatusBadge, Tabs, Thumb } from '../components/ui'
 import { BulkBar } from '../components/BulkBar'
 import { Checkbox } from '../components/Checkbox'
+import { DateRangeFilter } from '../components/DateRangeFilter'
 import { SearchInput } from '../components/SearchInput'
 import { GridCardSkeleton } from '../components/Skeleton'
 
@@ -17,14 +18,24 @@ const PAGE_SIZE = 25
 export function ReviewsPage() {
   const [status, setStatus] = useSearchParam<ReviewStatus>('status', 'pending', statuses)
   const [search, setSearch] = useSearchParam<string>('q', '', [''])
+  const [dateFrom, setDateFrom] = useSearchParam<string>('from', '', [''])
+  const [dateTo, setDateTo] = useSearchParam<string>('to', '', [''])
   const [offset, setOffset] = useState(0)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkRejecting, setBulkRejecting] = useState(false)
 
   const query = useQuery({
-    queryKey: ['ratings', status, search, offset],
-    queryFn: () => fetchRatings(status, { search: search || undefined, offset, limit: PAGE_SIZE, paginate: offset > 0 }),
+    queryKey: ['ratings', status, search, dateFrom, dateTo, offset],
+    queryFn: () =>
+      fetchRatings(status, {
+        search: search || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        offset,
+        limit: PAGE_SIZE,
+        paginate: offset > 0,
+      }),
     placeholderData: (prev) => prev,
   })
 
@@ -34,6 +45,12 @@ export function ReviewsPage() {
 
   const onSearch = (v: string) => {
     setSearch(v)
+    setOffset(0)
+    setSelected(new Set())
+  }
+  const onDateRange = (range: { from: string; to: string }) => {
+    setDateFrom(range.from)
+    setDateTo(range.to)
     setOffset(0)
     setSelected(new Set())
   }
@@ -91,6 +108,7 @@ export function ReviewsPage() {
         <div className="min-w-0 flex-1 sm:max-w-xs">
           <SearchInput value={search} onChange={onSearch} placeholder="Buscar en comentarios…" />
         </div>
+        <DateRangeFilter from={dateFrom} to={dateTo} onChange={onDateRange} />
         {items.length > 0 && (
           <button
             onClick={toggleAll}
@@ -120,6 +138,7 @@ export function ReviewsPage() {
               busy={busy(r.id, 'approved') || busy(r.id, 'rejected')}
               onApprove={() => moderate.mutate({ id: r.id, next: 'approved' })}
               onReject={() => moderate.mutate({ id: r.id, next: 'rejected' })}
+              onOpenLightbox={setLightbox}
             />
           ))}
         </div>
@@ -175,6 +194,7 @@ function ReviewCard({
   busy,
   onApprove,
   onReject,
+  onOpenLightbox,
 }: {
   r: Rating
   checked: boolean
@@ -182,8 +202,8 @@ function ReviewCard({
   busy: boolean
   onApprove: () => void
   onReject: () => void
+  onOpenLightbox: (url: string) => void
 }) {
-  const [lightbox, setLightbox] = useState<string | null>(null)
   return (
     <Card className="flex flex-col p-5">
       <div className="flex items-start justify-between gap-3">
@@ -215,7 +235,7 @@ function ReviewCard({
         <div className="mt-3 flex flex-wrap gap-2">
           {r.photos.map((p) => (
             <div key={p.id} className="relative">
-              <Thumb url={p.url} size="sm" onOpen={setLightbox} />
+              <Thumb url={p.url} size="sm" onOpen={onOpenLightbox} />
               {p.photo_status !== 'approved' && (
                 <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 text-[10px] text-white">
                   foto {p.photo_status === 'pending' ? 'pendiente' : 'rechazada'}
@@ -225,7 +245,6 @@ function ReviewCard({
           ))}
         </div>
       )}
-      <Lightbox url={lightbox} onClose={() => setLightbox(null)} />
 
       <div className="mt-4 flex gap-2">
         {r.status !== 'approved' && (

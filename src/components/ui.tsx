@@ -180,7 +180,7 @@ export function QueryState({
 
 // ----- Modal primitives -----
 
-function Modal({ open, onClose, children, className = '' }: { open: boolean; onClose: () => void; children: ReactNode; className?: string }) {
+export function Modal({ open, onClose, children, className = '' }: { open: boolean; onClose: () => void; children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDialogElement>(null)
   const lastFocused = useRef<HTMLElement | null>(null)
   useEffect(() => {
@@ -235,6 +235,11 @@ export function ReasonDialog({
 }) {
   const [reason, setReason] = useState('')
   const valid = !required || reason.trim().length >= 3
+  // Clear the textarea every time the dialog reopens so a previous
+  // cancel/dismiss doesn't leak the next user's draft.
+  useEffect(() => {
+    if (open) setReason('')
+  }, [open])
   return (
     <Modal open={open} onClose={onClose}>
       <form

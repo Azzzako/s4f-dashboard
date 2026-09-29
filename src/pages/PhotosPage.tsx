@@ -8,6 +8,7 @@ import { useSearchParam } from '../lib/useSearchParam'
 import { Button, Card, Lightbox, PageHeader, QueryState, ReasonDialog, StatusBadge, Tabs } from '../components/ui'
 import { BulkBar } from '../components/BulkBar'
 import { Checkbox } from '../components/Checkbox'
+import { DateRangeFilter } from '../components/DateRangeFilter'
 import { PhotoGridSkeleton } from '../components/Skeleton'
 
 const statuses: PhotoStatus[] = ['pending', 'approved', 'rejected']
@@ -15,14 +16,23 @@ const PAGE_SIZE = 50
 
 export function PhotosPage() {
   const [status, setStatus] = useSearchParam<PhotoStatus>('status', 'pending', statuses)
+  const [dateFrom, setDateFrom] = useSearchParam<string>('from', '', [''])
+  const [dateTo, setDateTo] = useSearchParam<string>('to', '', [''])
   const [offset, setOffset] = useState(0)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkRejecting, setBulkRejecting] = useState(false)
 
   const query = useQuery({
-    queryKey: ['photos', status, offset],
-    queryFn: () => fetchPhotos(status, { offset, limit: PAGE_SIZE, paginate: offset > 0 }),
+    queryKey: ['photos', status, dateFrom, dateTo, offset],
+    queryFn: () =>
+      fetchPhotos(status, {
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        offset,
+        limit: PAGE_SIZE,
+        paginate: offset > 0,
+      }),
     placeholderData: (prev) => prev,
   })
 
@@ -32,6 +42,12 @@ export function PhotosPage() {
 
   const onStatus = (v: PhotoStatus) => {
     setStatus(v)
+    setOffset(0)
+    setSelected(new Set())
+  }
+  const onDateRange = (range: { from: string; to: string }) => {
+    setDateFrom(range.from)
+    setDateTo(range.to)
     setOffset(0)
     setSelected(new Set())
   }
@@ -80,6 +96,7 @@ export function PhotosPage() {
       </PageHeader>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <DateRangeFilter from={dateFrom} to={dateTo} onChange={onDateRange} />
         {items.length > 0 && (
           <button
             onClick={toggleAll}

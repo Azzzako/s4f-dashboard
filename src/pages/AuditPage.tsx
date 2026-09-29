@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
 import { useState } from 'react'
 import { fetchAudit } from '../lib/api'
+import { downloadCsv, toCsv } from '../lib/csv'
 import { Button, Card, PageHeader, QueryState } from '../components/ui'
 import { TableRowSkeleton } from '../components/Skeleton'
 import { useSearchParam } from '../lib/useSearchParam'
@@ -39,6 +41,31 @@ export function AuditPage() {
 
   const items = (query.data ?? []).filter((e) => !filter || e.action.startsWith(filter))
 
+  const exportCsv = () => {
+    // Map rows into a flat shape so the CSV serializer stays generic.
+    const flat = items.map((e) => ({
+      created_at: new Date(e.created_at).toISOString(),
+      admin: `@${e.admin?.username ?? ''}`,
+      action: e.action,
+      target_type: e.target_type,
+      target_id: e.target_id,
+      details: JSON.stringify(e.details ?? {}),
+    }))
+    const csv = toCsv(flat, [
+      { key: 'created_at', header: 'Fecha' },
+      { key: 'admin', header: 'Admin' },
+      { key: 'action', header: 'Acción' },
+      { key: 'target_type', header: 'Tipo de objetivo' },
+      { key: 'target_id', header: 'ID de objetivo' },
+      { key: 'details', header: 'Detalles' },
+    ])
+    const date = new Date().toISOString().slice(0, 10)
+    const suffix = filter ? `-${filter}` : ''
+    downloadCsv(`auditoria${suffix}-${date}.csv`, csv)
+  }
+
+  const exportable = !query.isLoading && items.length > 0
+
   return (
     <>
       <PageHeader title="Auditoría" subtitle="Registro de cada acción de moderación y cambio de rol." />
@@ -60,6 +87,11 @@ export function AuditPage() {
             </option>
           ))}
         </select>
+        {exportable && (
+          <Button variant="ghost" icon={<Download className="size-4" />} onClick={exportCsv} className="ml-auto">
+            Exportar CSV
+          </Button>
+        )}
       </div>
 
       <QueryState

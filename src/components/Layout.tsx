@@ -2,6 +2,7 @@ import { Flag, History, Image, LayoutDashboard, LogOut, MapPin, Menu, MessageSqu
 import { useState, type ComponentType } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { t_ } from '../lib/i18n'
 import { usePendingCounts } from '../lib/queries'
 import { useRealtime } from '../lib/realtime'
 import type { PendingCounts } from '../lib/types'
@@ -15,14 +16,14 @@ interface NavItem {
 }
 
 const nav: NavItem[] = [
-  { to: '/', label: 'Resumen', icon: LayoutDashboard },
-  { to: '/spots', label: 'Spots', icon: MapPin, count: 'spots' },
-  { to: '/reviews', label: 'Reseñas', icon: MessageSquareText, count: 'ratings' },
-  { to: '/photos', label: 'Fotos', icon: Image, count: 'photos' },
-  { to: '/reports', label: 'Reportes', icon: Flag, count: 'reports' },
-  { to: '/audit', label: 'Auditoría', icon: History },
-  { to: '/admins', label: 'Administradores', icon: ShieldCheck },
-  { to: '/settings', label: 'Ajustes', icon: Settings },
+  { to: '/', label: t_('nav.overview'), icon: LayoutDashboard },
+  { to: '/spots', label: t_('nav.spots'), icon: MapPin, count: 'spots' },
+  { to: '/reviews', label: t_('nav.reviews'), icon: MessageSquareText, count: 'ratings' },
+  { to: '/photos', label: t_('nav.photos'), icon: Image, count: 'photos' },
+  { to: '/reports', label: t_('nav.reports'), icon: Flag, count: 'reports' },
+  { to: '/audit', label: t_('nav.audit'), icon: History },
+  { to: '/admins', label: t_('nav.admins'), icon: ShieldCheck },
+  { to: '/settings', label: t_('nav.settings'), icon: Settings },
 ]
 
 export function Layout() {
@@ -73,7 +74,7 @@ export function Layout() {
           className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <LogOut className="size-4" />
-          Cerrar sesión
+          {t_('nav.signOut')}
         </button>
       </div>
     </nav>
@@ -81,6 +82,12 @@ export function Layout() {
 
   return (
     <div className="flex min-h-full">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-zinc-900 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white dark:focus:bg-white dark:focus:text-zinc-900"
+      >
+        Saltar al contenido principal
+      </a>
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-zinc-200 bg-white lg:block dark:border-zinc-800 dark:bg-zinc-900">
         {sidebar}
       </aside>
@@ -104,7 +111,7 @@ export function Layout() {
           </button>
           <span className="font-semibold">S4F Admin</span>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </div>
@@ -114,12 +121,12 @@ export function Layout() {
 
 function ThemeToggle({ theme, onChange }: { theme: Theme; onChange: (t: Theme) => void }) {
   const options: { value: Theme; label: string; icon: ComponentType<{ className?: string }> }[] = [
-    { value: 'light', label: 'Claro', icon: Sun },
-    { value: 'system', label: 'Sistema', icon: Settings },
-    { value: 'dark', label: 'Oscuro', icon: Moon },
+    { value: 'light', label: t_('theme.light'), icon: Sun },
+    { value: 'system', label: t_('theme.system'), icon: Settings },
+    { value: 'dark', label: t_('theme.dark'), icon: Moon },
   ]
   return (
-    <div className="mb-3 flex items-center gap-1 px-2" role="radiogroup" aria-label="Tema">
+    <div className="mb-3 flex items-center gap-1 px-2" role="radiogroup" aria-label={t_('theme.toggle')}>
       {options.map(({ value, label, icon: Icon }) => (
         <button
           key={value}

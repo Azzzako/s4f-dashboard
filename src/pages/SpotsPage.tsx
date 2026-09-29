@@ -2,15 +2,18 @@ import { useQuery } from '@tanstack/react-query'
 import { Check, ExternalLink, MapPin, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { deleteSpot, fetchSpots, setSpotsStatusBulk, setSpotStatus } from '../lib/api'
-import { label, timeAgo } from '../lib/format'
+import { label } from '../lib/format'
 import type { Spot, SpotStatus } from '../lib/types'
 import { useModeration } from '../lib/useModeration'
 import { useSearchParam } from '../lib/useSearchParam'
-import { Avatar, Button, Card, Chip, Lightbox, PageHeader, QueryState, ReasonDialog, StatusBadge, Tabs, Thumb } from '../components/ui'
+import { Button, Card, Chip, Lightbox, PageHeader, QueryState, ReasonDialog, StatusBadge, Tabs, Thumb } from '../components/ui'
 import { BulkBar } from '../components/BulkBar'
 import { Checkbox } from '../components/Checkbox'
+import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog'
+import { DateRangeFilter } from '../components/DateRangeFilter'
 import { SearchInput } from '../components/SearchInput'
 import { GridCardSkeleton } from '../components/Skeleton'
+import { UserLine } from '../components/UserLine'
 
 const statuses: SpotStatus[] = ['pending', 'approved', 'rejected']
 const PAGE_SIZE = 25
@@ -23,6 +26,8 @@ export function SpotsPage() {
   const [search, setSearch] = useSearchParam<string>('q', '', [''])
   const [spotType, setSpotType] = useSearchParam<string>('type', '', [''])
   const [difficulty, setDifficulty] = useSearchParam<string>('difficulty', '', [''])
+  const [dateFrom, setDateFrom] = useSearchParam<string>('from', '', [''])
+  const [dateTo, setDateTo] = useSearchParam<string>('to', '', [''])
   const [offset, setOffset] = useState(0)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [rejecting, setRejecting] = useState<Spot | null>(null)
@@ -31,12 +36,14 @@ export function SpotsPage() {
   const [bulkRejecting, setBulkRejecting] = useState(false)
 
   const query = useQuery({
-    queryKey: ['spots', status, search, spotType, difficulty, offset],
+    queryKey: ['spots', status, search, spotType, difficulty, dateFrom, dateTo, offset],
     queryFn: () =>
       fetchSpots(status, {
         search: search || undefined,
         spotType: spotType || undefined,
         difficulty: difficulty || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
         offset,
         limit: PAGE_SIZE,
         paginate: offset > 0,
@@ -61,6 +68,12 @@ export function SpotsPage() {
   }
   const onDifficultyFilter = (v: string) => {
     setDifficulty(v)
+    setOffset(0)
+    setSelected(new Set())
+  }
+  const onDateRange = (range: { from: string; to: string }) => {
+    setDateFrom(range.from)
+    setDateTo(range.to)
     setOffset(0)
     setSelected(new Set())
   }
@@ -148,6 +161,7 @@ export function SpotsPage() {
             </option>
           ))}
         </select>
+        <DateRangeFilter from={dateFrom} to={dateTo} onChange={onDateRange} />
         {items.length > 0 && (
           <button
             onClick={toggleAll}
@@ -182,12 +196,12 @@ export function SpotsPage() {
                       <h2 className="text-lg font-semibold">{spot.name}</h2>
                       <StatusBadge status={spot.status} />
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                      <Avatar name={spot.author?.username} url={spot.author?.avatar_url} />
-                      <span>@{spot.author?.username ?? 'desconocido'}</span>
-                      <span>·</span>
-                      <span>{timeAgo(spot.created_at)}</span>
-                    </div>
+                    <UserLine
+                      name={spot.author?.username}
+                      avatarUrl={spot.author?.avatar_url}
+                      date={spot.created_at}
+                      className="mt-1"
+                    />
                   </div>
                 </div>
                 <SpotActions
@@ -263,12 +277,9 @@ export function SpotsPage() {
           rejecting && reject.mutate({ id: rejecting.id, reason }, { onSuccess: () => setRejecting(null) })
         }
       />
-      <ReasonDialog
+      <ConfirmDeleteDialog
         open={deleting !== null}
-        title={`Eliminar "${deleting?.name ?? ''}"`}
-        description="Se borra el spot con sus fotos, reseñas y likes. No se puede deshacer."
-        confirmLabel="Eliminar definitivamente"
-        required={false}
+        spotName={deleting?.name}
         loading={remove.isPending}
         onClose={() => setDeleting(null)}
         onConfirm={(reason) =>

@@ -31,6 +31,8 @@ export interface ListParams {
   limit?: number
   spotType?: string
   difficulty?: string
+  dateFrom?: string // ISO date (YYYY-MM-DD)
+  dateTo?: string
   /** When true, .range() is used for pagination. When false, a hard limit is applied. */
   paginate?: boolean
 }
@@ -60,6 +62,8 @@ export async function fetchSpots(status: SpotStatus, params: ListParams = {}): P
   query = searchFilter(query, params.search, ['name', 'description'])
   if (params.spotType) query = query.eq('type', params.spotType)
   if (params.difficulty) query = query.eq('difficulty', params.difficulty)
+  if (params.dateFrom) query = query.gte('created_at', params.dateFrom)
+  if (params.dateTo) query = query.lte('created_at', params.dateTo + 'T23:59:59')
   query = query.order('created_at', { ascending: status === 'pending' })
   if (params.paginate) query = query.range(offset, offset + limit - 1)
   else query = query.limit(limit)
@@ -79,6 +83,8 @@ export async function fetchRatings(status: ReviewStatus, params: ListParams = {}
     )
     .eq('status', status)
   query = searchFilter(query, params.search, ['comment'])
+  if (params.dateFrom) query = query.gte('created_at', params.dateFrom)
+  if (params.dateTo) query = query.lte('created_at', params.dateTo + 'T23:59:59')
   query = query.order('created_at', { ascending: status === 'pending' })
   if (params.paginate) query = query.range(offset, offset + limit - 1)
   else query = query.limit(limit)
@@ -96,6 +102,8 @@ export async function fetchPhotos(status: PhotoStatus, params: ListParams = {}):
         ` spot:spots!spot_photos_spot_id_fkey(${spotRef})`,
     )
     .eq('photo_status', status)
+  if (params.dateFrom) query = query.gte('created_at', params.dateFrom)
+  if (params.dateTo) query = query.lte('created_at', params.dateTo + 'T23:59:59')
   query = query.order('created_at', { ascending: status === 'pending' })
   if (params.paginate) query = query.range(offset, offset + limit - 1)
   else query = query.limit(limit)
@@ -114,6 +122,8 @@ export async function fetchReports(status: ReportStatus, params: ListParams = {}
     )
     .eq('status', status)
   query = searchFilter(query, params.search, ['reason'])
+  if (params.dateFrom) query = query.gte('created_at', params.dateFrom)
+  if (params.dateTo) query = query.lte('created_at', params.dateTo + 'T23:59:59')
   query = query.order('created_at', { ascending: status === 'open' })
   if (params.paginate) query = query.range(offset, offset + limit - 1)
   else query = query.limit(limit)
@@ -131,6 +141,17 @@ export async function fetchAudit(params: ListParams = {}): Promise<AuditEntry[]>
   if (params.paginate) query = query.range(offset, offset + limit - 1)
   else query = query.limit(limit)
   const res = await query
+  return unwrap<AuditEntry[]>(res)
+}
+
+// Wider window for the analytics dashboard. Caps at 1000 to keep the
+// client-side aggregation cheap.
+export async function fetchAuditRecent(limit = 1000): Promise<AuditEntry[]> {
+  const res = await supabase
+    .from('admin_audit_log')
+    .select('*, admin:profiles!admin_audit_log_admin_id_fkey(username)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
   return unwrap<AuditEntry[]>(res)
 }
 
