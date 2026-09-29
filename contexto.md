@@ -165,13 +165,13 @@ scripts/                setup.sh, deploy.sh
 ## 11. Estado actual (al cierre de esta sesión)
 
 **Ramas:**
-- `main` ← en producción (sirviendo en `localhost:7777`)
-- `dev` ← 1 commit adelante de `main` (config de puertos: dev en 5173)
+- `main` ← en producción (sirviendo en `localhost:7777`), commit `4a84203`
+- `dev` ← alineado con `main`
 
 **pm2:**
-- Proceso `s4f-admin` corriendo, uptime ~5 min al último check
+- Proceso `s4f-admin` corriendo, pid `38900`
 
-**Último deploy:** login rediseñado (split-screen corporativo) + config de puertos
+**Último deploy:** contexto.md + 3 skills (frontend-senior, cybersecurity, session-summary) + 2 comandos
 
 ---
 
@@ -233,3 +233,32 @@ Si `pm2 startup` no se ha corrido todavía y reinicias la Mac, el proceso no vue
 6. Si quieres servirlo en 7777 como producción local: `npm run setup`
 
 El archivo `.env.local` **no está en git** — tienes que copiarlo a mano en cada máquina.
+
+---
+
+## 17. Agentes / skills disponibles
+
+Definidos en `.opencode/skills/` (proyecto) — se cargan al iniciar opencode.
+
+| Skill | Cuándo se invoca | Qué hace |
+| --- | --- | --- |
+| `frontend-senior` | Trabajando en UI/UX | Mindset de senior frontend: accesibilidad, performance, escalabilidad. |
+| `cybersecurity` | Antes de push a main, cambios en auth/RPC | Checklist de seguridad con severidad y fixes concretos. |
+| `session-summary` | Antes de push a main, fin de sesión | Actualiza este `contexto.md` con el estado actual. |
+
+**Comandos explícitos** en `.opencode/command/`:
+
+| Comando | Qué hace |
+| --- | --- |
+| `/security-review` | Corre el checklist de cybersecurity sobre los cambios actuales (read-only). |
+| `/session-summary` | Actualiza `contexto.md` con el estado actual. |
+
+### Flujo "push a main"
+
+Cuando dices "push a main", yo ejecuto en orden:
+
+1. **Security review** → corre checklist, reporta hallazgos. Si hay Critical/High, BLOQUEA el push hasta arreglar.
+2. **Session summary** → actualiza `contexto.md` con el estado del deploy (ramas, commit, pid pm2, tests, build).
+3. `git checkout main && git merge --no-ff dev`
+4. `git push origin main`
+5. `npm run deploy` (rebuild + `pm2 restart s4f-admin`)
