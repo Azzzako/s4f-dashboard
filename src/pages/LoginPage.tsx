@@ -38,46 +38,34 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
-      {/* Left: statement panel (always dark for visual punch) */}
+      {/* Left: statement panel */}
       <aside className="relative hidden overflow-hidden bg-zinc-950 text-zinc-100 lg:flex lg:flex-col lg:justify-between lg:p-10 xl:p-14">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage: 'radial-gradient(#f97316 1.5px, transparent 1.5px)',
-            backgroundSize: '20px 20px',
-          }}
-        />
-        <div aria-hidden className="absolute top-0 left-0 h-1 w-32 bg-brand-500" />
-
         <div className="relative flex items-center gap-3">
-          <div className="grid size-12 place-items-center rounded-xl bg-brand-500 text-base font-black tracking-tight text-white">
+          <div className="grid size-11 place-items-center rounded-xl bg-brand-500 text-base font-black tracking-tight text-white">
             S4F
           </div>
-          <div className="text-[10px] font-bold leading-tight uppercase tracking-[0.18em] text-zinc-500">
-            Mod<br />Panel
+          <div className="text-[10px] font-bold leading-tight uppercase tracking-[0.18em] text-zinc-400">
+            Centro de<br />moderación
           </div>
         </div>
 
-        <div className="relative max-w-md space-y-6">
+        <div className="relative max-w-md space-y-5">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-500">
             <span className="size-1.5 rounded-full bg-brand-500" />
-            Admin · v1
+            Acceso interno
           </div>
-          <h1 className="text-5xl font-black leading-[0.95] tracking-tight xl:text-6xl">
-            Para los que<br />
-            cuidan el<br />
-            <span className="text-brand-500">barrio.</span>
+          <h1 className="text-4xl font-black leading-[1.05] tracking-tight xl:text-5xl">
+            Modera. Aprueba.<br />
+            <span className="text-brand-500">Publica.</span>
           </h1>
           <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
-            Aprueba spots, reseñas y fotos. Cada decisión llega al instante a la calle.
+            Revisa spots, reseñas y fotos. Cada cambio se refleja al instante en la app.
           </p>
         </div>
 
-        <div className="relative grid grid-cols-3 gap-6 border-t border-zinc-800 pt-6">
-          <Stat value="24/7" label="En línea" />
-          <Stat value="RT" label="Tiempo real" />
-          <Stat value="0" label="Spam" />
+        <div className="relative flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+          <span>Spot For Fun</span>
+          <span>v1</span>
         </div>
       </aside>
 
@@ -87,7 +75,9 @@ export function LoginPage() {
           <div className="grid size-9 place-items-center rounded-lg bg-brand-500 text-sm font-black text-white">
             S4F
           </div>
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Mod Panel</span>
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+            Centro de moderación
+          </span>
         </div>
 
         <form onSubmit={submit} className="w-full max-w-sm">
@@ -95,18 +85,18 @@ export function LoginPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-600">
               {mode === 'login' ? 'Acceso' : 'Recuperar'}
             </p>
-            <h2 className="text-4xl font-black leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
-              {mode === 'login' ? 'Inicia sesión.' : 'Restaura tu pass.'}
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
+              {mode === 'login' ? 'Iniciar sesión' : 'Restablecer contraseña'}
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {mode === 'login'
-                ? 'Solo admins. Si no tienes acceso, pide a uno que te agregue desde el panel.'
-                : 'Te mandamos un link al correo para que pongas una contraseña nueva.'}
+                ? 'Solo cuentas con permisos de administrador. Si no tienes acceso, pide a un admin que te agregue.'
+                : 'Te enviaremos un correo con un enlace para definir una contraseña nueva.'}
             </p>
           </div>
 
           <div className="space-y-6">
-            <Field label="Email">
+            <Field label="Correo electrónico">
               <input
                 type="email"
                 required
@@ -119,7 +109,7 @@ export function LoginPage() {
             </Field>
 
             {mode === 'login' && (
-              <Field label="Password">
+              <Field label="Contraseña">
                 <input
                   type="password"
                   required
@@ -143,7 +133,7 @@ export function LoginPage() {
             className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 px-6 py-4 text-sm font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-brand-500 disabled:opacity-60 dark:bg-brand-500 dark:hover:bg-brand-600"
           >
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-            {mode === 'login' ? 'Entrar' : 'Enviar link'}
+            {mode === 'login' ? 'Iniciar sesión' : 'Enviar enlace'}
             {mode === 'login' && !loading && (
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             )}
@@ -161,7 +151,7 @@ export function LoginPage() {
           </button>
 
           <p className="mt-14 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
-            Spot For Fun · Mod Panel · 2024+
+            Spot For Fun · Centro de moderación
           </p>
         </form>
       </main>
@@ -175,14 +165,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
-  )
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <p className="text-2xl font-black tabular-nums text-white xl:text-3xl">{value}</p>
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</p>
-    </div>
   )
 }
