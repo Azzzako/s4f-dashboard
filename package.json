@@ -12,8 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "setup": "bash scripts/setup.sh",
-    "deploy": "bash scripts/deploy.sh",
-    "hooks:install": "bash scripts/install-hooks.sh"
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

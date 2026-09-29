@@ -45,8 +45,7 @@ npm run dev                  # http://localhost:7777
 | Rama | Para qué sirve |
 | --- | --- |
 | `dev` | Trabajo de features. Aquí se hacen los PRs de `feature/*`. |
-| `staging` | Pre-producción. Recibe merges de `dev` cuando se quiere validar algo completo. |
-| `master` | Producción. Solo recibe merges desde `staging`. Cada merge redespliega. |
+| `main` | Producción. Solo recibe merges desde `dev`. Cada merge redespliega. |
 
 ```bash
 # Empezar una feature
@@ -57,12 +56,8 @@ git commit -am "feat: mi cambio"
 git checkout dev && git merge --no-ff feature/mi-cambio
 git branch -d feature/mi-cambio
 
-# Promover a staging (validación manual)
-git checkout staging && git merge --no-ff dev
-
-# Promover a producción (esto redespliega automáticamente si el hook está instalado)
-git checkout master && git merge --no-ff staging
-npm run deploy
+# Cuando esté listo para producción, avisame con "push a main".
+# Yo me encargo de: mergear dev → main, pushear a origin y correr npm run deploy.
 ```
 
 ## Despliegue local con pm2
@@ -78,16 +73,10 @@ pm2 startup    # te mostrará un comando sudo, cópialo y ejecútalo
 # para que arranque al prender la Mac
 ```
 
-**Redesplegar** después de un merge a master:
+**Redesplegar** después de mergear a main:
 
 ```bash
 npm run deploy
-```
-
-**Auto-deploy opcional al hacer `git pull` en master:**
-
-```bash
-npm run hooks:install
 ```
 
 **Comandos pm2 útiles:**
