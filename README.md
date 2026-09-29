@@ -37,8 +37,15 @@ Este repo incluye los archivos SQL listos para copiarse al repo `spot_for_fun` y
 ```bash
 cp .env.example .env.local   # llena VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY
 npm install
-npm run dev                  # http://localhost:7777
+npm run dev                  # http://localhost:5173 (Vite default)
 ```
+
+## Puertos
+
+| Comando | Puerto | Notas |
+| --- | --- | --- |
+| `npm run dev` | **5173** | Default de Vite. Para trabajar en `dev`. |
+| `npm run preview` (y pm2) | **7777** | Loopback (`127.0.0.1`). Producción. |
 
 ## Workflow de ramas
 
